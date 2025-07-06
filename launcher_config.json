@@ -1,0 +1,37 @@
+{
+    "dark_mode": false,
+    "profiles": {
+        "Profile1": {
+            "username": "obsidianmode",
+            "version": "",
+            "ram_gb": 3,
+            "extra_jvm_args": "",
+            "fullscreen": true,
+            "width": 854,
+            "height": 480
+        }
+    },
+    "last_profile": "Profile1",
+    "minecraft_dir": "C:\\Users\\omera\\PycharmProjects\\offline_launcher",
+    "history": [
+        {
+            "username": "obsidianmode1",
+            "version": "1.20.1"
+        },
+        {
+            "username": "obsidianmode",
+            "version": "1.20.1"
+        },
+        {
+            "username": "obsidianmode",
+            "version": ""
+        },
+        {
+            "username": "asdasdsadd",
+            "version": "1.20.1"
+        }
+    ],
+    "language": "en",
+    "mods_folder": "",
+    "servers": []
+}
