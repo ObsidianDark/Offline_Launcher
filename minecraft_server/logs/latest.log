@@ -1,0 +1,65 @@
+[18:50:15] [ServerMain/ERROR]: Failed to load properties from file: server.properties
+java.nio.file.NoSuchFileException: server.properties
+	at sun.nio.fs.WindowsException.translateToIOException(WindowsException.java:85) ~[?:?]
+	at sun.nio.fs.WindowsException.rethrowAsIOException(WindowsException.java:103) ~[?:?]
+	at sun.nio.fs.WindowsException.rethrowAsIOException(WindowsException.java:108) ~[?:?]
+	at sun.nio.fs.WindowsFileSystemProvider.newByteChannel(WindowsFileSystemProvider.java:234) ~[?:?]
+	at java.nio.file.Files.newByteChannel(Files.java:380) ~[?:?]
+	at java.nio.file.Files.newByteChannel(Files.java:432) ~[?:?]
+	at java.nio.file.spi.FileSystemProvider.newInputStream(FileSystemProvider.java:420) ~[?:?]
+	at java.nio.file.Files.newInputStream(Files.java:160) ~[?:?]
+	at ahi.b(SourceFile:62) ~[server-1.20.1.jar:?]
+	at ahf.a(SourceFile:137) ~[server-1.20.1.jar:?]
+	at ahg.<init>(SourceFile:12) ~[server-1.20.1.jar:?]
+	at net.minecraft.server.Main.main(SourceFile:115) ~[server-1.20.1.jar:?]
+	at net.minecraft.bundler.Main.lambda$run$0(Main.java:54) ~[?:?]
+	at java.lang.Thread.run(Thread.java:1583) ~[?:?]
+[18:50:15] [ServerMain/INFO]: Environment: authHost='https://authserver.mojang.com', accountsHost='https://api.mojang.com', sessionHost='https://sessionserver.mojang.com', servicesHost='https://api.minecraftservices.com', name='PROD'
+[18:50:16] [ServerMain/INFO]: Loaded 7 recipes
+[18:50:16] [ServerMain/INFO]: Loaded 1271 advancements
+[18:50:16] [Server thread/INFO]: Starting minecraft server version 1.20.1
+[18:50:16] [Server thread/INFO]: Loading properties
+[18:50:16] [Server thread/INFO]: Default game type: SURVIVAL
+[18:50:16] [Server thread/INFO]: Generating keypair
+[18:50:17] [Server thread/INFO]: Starting Minecraft server on *:25565
+[18:50:17] [Server thread/INFO]: Using default channel type
+[18:50:17] [Server thread/INFO]: Preparing level "world"
+[18:50:20] [Server thread/INFO]: Preparing start region for dimension minecraft:overworld
+[18:50:20] [Worker-Main-6/INFO]: Preparing spawn area: 0%
+[18:50:20] [Worker-Main-11/INFO]: Preparing spawn area: 0%
+[18:50:21] [Worker-Main-5/INFO]: Preparing spawn area: 0%
+[18:50:21] [Worker-Main-8/INFO]: Preparing spawn area: 1%
+[18:50:22] [Worker-Main-2/INFO]: Preparing spawn area: 3%
+[18:50:22] [Worker-Main-4/INFO]: Preparing spawn area: 5%
+[18:50:23] [Worker-Main-10/INFO]: Preparing spawn area: 9%
+[18:50:23] [Worker-Main-7/INFO]: Preparing spawn area: 11%
+[18:50:24] [Worker-Main-7/INFO]: Preparing spawn area: 15%
+[18:50:24] [Worker-Main-10/INFO]: Preparing spawn area: 17%
+[18:50:25] [Worker-Main-8/INFO]: Preparing spawn area: 21%
+[18:50:25] [Worker-Main-5/INFO]: Preparing spawn area: 22%
+[18:50:26] [Worker-Main-8/INFO]: Preparing spawn area: 22%
+[18:50:26] [Worker-Main-10/INFO]: Preparing spawn area: 26%
+[18:50:27] [Worker-Main-5/INFO]: Preparing spawn area: 28%
+[18:50:27] [Worker-Main-1/INFO]: Preparing spawn area: 32%
+[18:50:28] [Worker-Main-2/INFO]: Preparing spawn area: 36%
+[18:50:28] [Worker-Main-6/INFO]: Preparing spawn area: 41%
+[18:50:29] [Worker-Main-9/INFO]: Preparing spawn area: 43%
+[18:50:29] [Worker-Main-4/INFO]: Preparing spawn area: 48%
+[18:50:30] [Worker-Main-2/INFO]: Preparing spawn area: 53%
+[18:50:30] [Worker-Main-1/INFO]: Preparing spawn area: 55%
+[18:50:31] [Worker-Main-3/INFO]: Preparing spawn area: 61%
+[18:50:31] [Worker-Main-2/INFO]: Preparing spawn area: 64%
+[18:50:32] [Worker-Main-7/INFO]: Preparing spawn area: 68%
+[18:50:32] [Worker-Main-11/INFO]: Preparing spawn area: 71%
+[18:50:33] [Worker-Main-11/INFO]: Preparing spawn area: 75%
+[18:50:33] [Worker-Main-8/INFO]: Preparing spawn area: 78%
+[18:50:34] [Worker-Main-6/INFO]: Preparing spawn area: 82%
+[18:50:34] [Worker-Main-10/INFO]: Preparing spawn area: 83%
+[18:50:35] [Worker-Main-11/INFO]: Preparing spawn area: 86%
+[18:50:35] [Worker-Main-7/INFO]: Preparing spawn area: 87%
+[18:50:36] [Worker-Main-7/INFO]: Preparing spawn area: 89%
+[18:50:36] [Worker-Main-3/INFO]: Preparing spawn area: 93%
+[18:50:37] [Worker-Main-9/INFO]: Preparing spawn area: 96%
+[18:50:37] [Server thread/INFO]: Time elapsed: 17392 ms
+[18:50:37] [Server thread/INFO]: Done (20.174s)! For help, type "help"
+[18:52:02] [Server thread/INFO]: com.mojang.authlib.GameProfile@505ea1ed[id=<null>,name=obsidianmode,properties={},legacy=false] (/127.0.0.1:63065) lost connection: Disconnected
