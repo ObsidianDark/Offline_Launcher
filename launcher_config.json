@@ -12,14 +12,14 @@
         }
     },
     "last_profile": "Profile1",
-    "minecraft_dir": "C:\\Users\\omera\\PycharmProjects\\offline_launcher",
+    "minecraft_dir": "C:\\Users\\omera\\OneDrive\\Belgeler\\GitHub\\Offline_Launcher",
     "history": [
         {
-            "username": "obsidianmode1",
+            "username": "obsidianmode",
             "version": "1.20.1"
         },
         {
-            "username": "obsidianmode",
+            "username": "obsidianmode1",
             "version": "1.20.1"
         },
         {
@@ -33,5 +33,6 @@
     ],
     "language": "en",
     "mods_folder": "",
-    "servers": []
+    "servers": [],
+    "accounts": {}
 }

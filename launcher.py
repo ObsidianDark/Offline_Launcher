@@ -9,6 +9,57 @@ import urllib.request
 
 CONFIG_FILE = "launcher_config.json"
 
+class AccountDialog(tk.Toplevel):
+    def __init__(self, parent, title=None, initial=None):
+        super().__init__(parent)
+        self.result = None
+        self.title(title or "Account")
+
+        self.username_var = tk.StringVar(value=initial.get("username") if initial else "")
+        self.mode_var = tk.StringVar(value=initial.get("mode") if initial else "offline")
+        self.token_var = tk.StringVar(value=initial.get("token") if initial else "")
+
+        ttk.Label(self, text="Username:").grid(row=0, column=0, sticky="w", pady=5, padx=5)
+        ttk.Entry(self, textvariable=self.username_var).grid(row=0, column=1, sticky="ew", pady=5, padx=5)
+
+        ttk.Label(self, text="Mode:").grid(row=1, column=0, sticky="w", pady=5, padx=5)
+        mode_combo = ttk.Combobox(self, textvariable=self.mode_var, values=["offline", "online"], state="readonly")
+        mode_combo.grid(row=1, column=1, sticky="ew", pady=5, padx=5)
+        mode_combo.bind("<<ComboboxSelected>>", self.on_mode_change)
+
+        ttk.Label(self, text="Token (online only):").grid(row=2, column=0, sticky="w", pady=5, padx=5)
+        self.token_entry = ttk.Entry(self, textvariable=self.token_var)
+        self.token_entry.grid(row=2, column=1, sticky="ew", pady=5, padx=5)
+
+        btn_frame = ttk.Frame(self)
+        btn_frame.grid(row=3, column=0, columnspan=2, pady=10)
+
+        ttk.Button(btn_frame, text="OK", command=self.on_ok).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text="Cancel", command=self.destroy).pack(side=tk.LEFT)
+
+        self.columnconfigure(1, weight=1)
+
+        self.on_mode_change()
+        self.grab_set()
+        self.wait_window(self)
+
+    def on_mode_change(self, event=None):
+        if self.mode_var.get() == "offline":
+            self.token_entry.config(state="disabled")
+            self.token_var.set("")
+        else:
+            self.token_entry.config(state="normal")
+
+    def on_ok(self):
+        username = self.username_var.get().strip()
+        if not username:
+            messagebox.showerror("Error", "Username cannot be empty.")
+            return
+        mode = self.mode_var.get()
+        token = self.token_var.get().strip() if mode == "online" else None
+        self.result = {"username": username, "mode": mode, "token": token}
+        self.destroy()
+
 class MinecraftLauncher(tk.Tk):
     def __init__(self):
         super().__init__()
@@ -19,6 +70,7 @@ class MinecraftLauncher(tk.Tk):
         self.minecraft_dir = os.path.abspath(".")
         self.config = self.load_config()
         self.profiles = self.config.get("profiles", {})
+        self.accounts = self.config.get("accounts", {})  # new
         self.history = self.config.get("history", [])
         self.dark_mode = self.config.get("dark_mode", False)
 
@@ -26,6 +78,7 @@ class MinecraftLauncher(tk.Tk):
         self.apply_theme()
         self.load_versions()
         self.load_profile(self.config.get("last_profile", None))
+        self.refresh_account_list()
 
     def create_widgets(self):
         self.notebook = ttk.Notebook(self)
@@ -36,14 +89,17 @@ class MinecraftLauncher(tk.Tk):
         self.profiles_frame = ttk.Frame(self.notebook)
         self.settings_frame = ttk.Frame(self.notebook)
         self.log_frame = ttk.Frame(self.notebook)
+        self.accounts_frame = ttk.Frame(self.notebook)  # new
 
         self.notebook.add(self.launch_frame, text="Launch")
         self.notebook.add(self.profiles_frame, text="Profiles")
+        self.notebook.add(self.accounts_frame, text="Accounts")  # new tab
         self.notebook.add(self.settings_frame, text="Settings")
         self.notebook.add(self.log_frame, text="Console Log")
 
         self.create_launch_tab()
         self.create_profiles_tab()
+        self.create_accounts_tab()  # new
         self.create_settings_tab()
         self.create_log_tab()
 
@@ -59,9 +115,18 @@ class MinecraftLauncher(tk.Tk):
         self.profile_combo.bind("<<ComboboxSelected>>", self.on_profile_select)
 
         row += 1
-        ttk.Label(frame, text="Username:", font=("Arial", 11)).grid(row=row, column=0, sticky="w", pady=4)
+        # Account selector dropdown (new)
+        ttk.Label(frame, text="Account:", font=("Arial", 11)).grid(row=row, column=0, sticky="w", pady=4)
+        self.account_var = tk.StringVar()
+        self.account_combo = ttk.Combobox(frame, textvariable=self.account_var, state="readonly")
+        self.account_combo.grid(row=row, column=1, sticky="ew", pady=4)
+        self.account_combo.bind("<<ComboboxSelected>>", self.on_account_select)
+
+        row += 1
+        ttk.Label(frame, text="Username (manual):", font=("Arial", 11)).grid(row=row, column=0, sticky="w", pady=4)
         self.username_entry = ttk.Entry(frame)
         self.username_entry.grid(row=row, column=1, sticky="ew", pady=4)
+        ttk.Label(frame, text="(Used if no account selected)", font=("Arial", 8)).grid(row=row, column=2, sticky="w", pady=4)
 
         row += 1
         ttk.Label(frame, text="Minecraft Version:", font=("Arial", 11)).grid(row=row, column=0, sticky="w", pady=4)
@@ -98,8 +163,92 @@ class MinecraftLauncher(tk.Tk):
         self.launch_button = ttk.Button(frame, text="Launch Minecraft", command=self.launch_minecraft)
         self.launch_button.grid(row=row, column=0, columnspan=2, pady=10)
 
-        for i in range(2):
+        for i in range(3):
             frame.columnconfigure(i, weight=1)
+
+    # === Accounts Tab ===
+    def create_accounts_tab(self):
+        frame = self.accounts_frame
+
+        self.account_listbox = tk.Listbox(frame)
+        self.account_listbox.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=5, pady=5)
+        self.account_listbox.bind("<<ListboxSelect>>", self.on_account_list_select)
+
+        btn_frame = ttk.Frame(frame)
+        btn_frame.pack(side=tk.RIGHT, fill=tk.Y, padx=5, pady=5)
+
+        ttk.Button(btn_frame, text="Add Account", command=self.add_account).pack(fill=tk.X, pady=2)
+        ttk.Button(btn_frame, text="Edit Account", command=self.edit_account).pack(fill=tk.X, pady=2)
+        ttk.Button(btn_frame, text="Delete Account", command=self.delete_account).pack(fill=tk.X, pady=2)
+
+        self.refresh_account_list()
+
+    def refresh_account_list(self):
+        self.account_listbox.delete(0, tk.END)
+        accounts_sorted = sorted(self.accounts.keys())
+        for acc in accounts_sorted:
+            mode = self.accounts[acc].get("mode", "offline")
+            self.account_listbox.insert(tk.END, f"{acc} [{mode}]")
+
+        # Update launch tab account combo too
+        self.account_combo['values'] = accounts_sorted
+        if self.account_var.get() not in accounts_sorted:
+            self.account_var.set('')
+
+    def add_account(self):
+        dialog = AccountDialog(self, title="Add Account")
+        if dialog.result:
+            uname = dialog.result["username"]
+            if uname in self.accounts:
+                messagebox.showerror("Error", "Account with that username already exists.")
+                return
+            self.accounts[uname] = dialog.result
+            self.save_config()
+            self.refresh_account_list()
+
+    def edit_account(self):
+        sel = self.account_listbox.curselection()
+        if not sel:
+            messagebox.showinfo("Edit Account", "Please select an account to edit.")
+            return
+        item = self.account_listbox.get(sel[0])
+        acc_name = item.split()[0]
+        if acc_name not in self.accounts:
+            return
+        dialog = AccountDialog(self, title="Edit Account", initial=self.accounts[acc_name])
+        if dialog.result:
+            self.accounts[acc_name] = dialog.result
+            self.save_config()
+            self.refresh_account_list()
+
+    def delete_account(self):
+        sel = self.account_listbox.curselection()
+        if not sel:
+            messagebox.showinfo("Delete Account", "Please select an account to delete.")
+            return
+        item = self.account_listbox.get(sel[0])
+        acc_name = item.split()[0]
+        if messagebox.askyesno("Delete Account", f"Delete account '{acc_name}'?"):
+            self.accounts.pop(acc_name, None)
+            self.save_config()
+            self.refresh_account_list()
+
+    def on_account_list_select(self, event):
+        sel = self.account_listbox.curselection()
+        if sel:
+            item = self.account_listbox.get(sel[0])
+            acc_name = item.split()[0]
+            self.account_var.set(acc_name)
+            # Optional: autofill username entry with this account's username
+            self.username_entry.delete(0, tk.END)
+            self.username_entry.insert(0, acc_name)
+
+    def on_account_select(self, event):
+        # When account selected in launch tab combo, autofill username entry
+        acc_name = self.account_var.get()
+        if acc_name in self.accounts:
+            self.username_entry.delete(0, tk.END)
+            self.username_entry.insert(0, acc_name)
 
     # === Profiles Tab ===
     def create_profiles_tab(self):
@@ -233,6 +382,7 @@ class MinecraftLauncher(tk.Tk):
         self.fullscreen_var.set(False)
         self.width_entry.delete(0, tk.END)
         self.height_entry.delete(0, tk.END)
+        self.account_var.set("")
 
     def save_current_profile(self):
         profile_name = self.profile_var.get()
@@ -251,6 +401,7 @@ class MinecraftLauncher(tk.Tk):
                 raise ValueError()
         except ValueError:
             messagebox.showerror("Error", "Max RAM must be a positive integer.")
+
             return
 
         try:
@@ -292,9 +443,23 @@ class MinecraftLauncher(tk.Tk):
         self.height_entry.insert(0, str(profile.get("height", 480)))
 
     def launch_minecraft(self):
-        username = self.username_entry.get().strip()
+        # Determine username & token from selected account or manual input
+        account_name = self.account_var.get()
+        username = None
+        token = None
+        mode = "offline"
+
+        if account_name and account_name in self.accounts:
+            acc = self.accounts[account_name]
+            username = acc.get("username")
+            mode = acc.get("mode", "offline")
+            token = acc.get("token", None)
+        else:
+            # fallback to manual username entry
+            username = self.username_entry.get().strip()
+
         if not username:
-            messagebox.showerror("Error", "Please enter a username.")
+            messagebox.showerror("Error", "Please enter a username or select an account.")
             return
 
         version = self.version_var.get()
@@ -315,15 +480,14 @@ class MinecraftLauncher(tk.Tk):
             messagebox.showerror("Error", "Width and Height must be integers.")
             return
 
-        # Save last used profile data in history
         self.add_to_history(username, version)
 
-        self.append_log(f"Launching Minecraft {version} as '{username}'...\n")
+        self.append_log(f"Launching Minecraft {version} as '{username}' ({mode})...\n")
         self.launch_button.config(state=tk.DISABLED)
         threading.Thread(target=self._launch_minecraft_thread,
-                         args=(username, version, ram_gb, extra_jvm, fullscreen, width, height), daemon=True).start()
+                         args=(username, version, ram_gb, extra_jvm, fullscreen, width, height, mode, token), daemon=True).start()
 
-    def _launch_minecraft_thread(self, username, version, ram_gb, extra_jvm, fullscreen, width, height):
+    def _launch_minecraft_thread(self, username, version, ram_gb, extra_jvm, fullscreen, width, height, mode, token):
         try:
             version_path = os.path.join(self.minecraft_dir, "versions", version)
             if not os.path.exists(version_path):
@@ -346,13 +510,16 @@ class MinecraftLauncher(tk.Tk):
                 "height": height,
             }
 
+            if mode == "online" and token:
+                options["uuid"] = "online-uuid"  # Optionally set real UUID here if you have it
+                options["token"] = token
+
             launch_command = minecraft_launcher_lib.command.get_minecraft_command(
                 version,
                 self.minecraft_dir,
                 options
             )
 
-            # Run the process capturing output
             proc = subprocess.Popen(launch_command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, bufsize=1)
 
             for line in proc.stdout:
@@ -389,7 +556,6 @@ class MinecraftLauncher(tk.Tk):
         self.config["history"] = self.history
         self.save_config()
 
-    # === Settings methods ===
     def apply_theme(self):
         style = ttk.Style(self)
         if self.theme_var.get() == "Dark":
@@ -431,6 +597,7 @@ class MinecraftLauncher(tk.Tk):
 
     def save_config(self):
         self.config['profiles'] = self.profiles
+        self.config['accounts'] = self.accounts
         self.config['last_profile'] = self.profile_var.get()
         self.config['minecraft_dir'] = self.minecraft_dir
         self.config['dark_mode'] = self.dark_mode
@@ -453,68 +620,6 @@ class MinecraftLauncher(tk.Tk):
     def on_close(self):
         self.save_config()
         self.destroy()
-
-    # === Server ===
-    def select_manifest(self):
-        file_path = filedialog.askopenfilename(
-            title="Select Server Manifest JSON",
-            filetypes=[("JSON files", "*.json"), ("All files", "*.*")]
-        )
-        if file_path:
-            self.server_manifest_path = file_path
-            self.append_server_log(f"Selected manifest file: {file_path}\n")
-
-    def create_new_server(self):
-        version = self.server_version_var.get().strip()
-        manifest = None
-        if self.server_manifest_path:
-            try:
-                with open(self.server_manifest_path, "r") as f:
-                    manifest = json.load(f)
-            except Exception as e:
-                messagebox.showerror("Error", f"Failed to load manifest JSON:\n{e}")
-                return
-
-        self.append_server_log(f"Creating server version {version}...\n")
-        self.create_server_btn.config(state=tk.DISABLED)
-
-        threading.Thread(target=self._create_and_run_server_thread, args=(version, manifest), daemon=True).start()
-
-    def _create_and_run_server_thread(self, version, manifest):
-        import server  # Import your server.py module (must be in same folder)
-
-        try:
-            # Create server folder
-            server_dir = os.path.join(self.minecraft_dir, "servers", f"server_{version.replace('.', '_')}")
-            os.makedirs(server_dir, exist_ok=True)
-
-            # Use server.py functionality to setup the server
-            s = server.MinecraftServer(version=version, directory=server_dir, manifest=manifest)
-            s.setup_server()
-
-            self.append_server_log(f"Server setup complete in: {server_dir}\n")
-            self.append_server_log("Starting server...\n")
-
-            # Run the server jar and print output live
-            proc = s.run_server_process()
-
-            for line in proc.stdout:
-                self.append_server_log(line)
-
-            proc.wait()
-            self.append_server_log(f"Server exited with code {proc.returncode}\n")
-
-        except Exception as e:
-            self.append_server_log(f"Error running server: {e}\n")
-
-        finally:
-            self.create_server_btn.config(state=tk.NORMAL)
-
-    def append_server_log(self, text):
-        self.server_log_text.config(state=tk.NORMAL)
-        self.server_log_text.insert(tk.END, text)
-        self.server_log_text.see(tk.END)
-        self.server_log_text.config(state=tk.DISABLED)
 
 def get_versions(minecraft_dir):
     versions_folder = os.path.join(minecraft_dir, "versions")
