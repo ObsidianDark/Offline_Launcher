@@ -1,4 +1,4 @@
-version:3465
+version:3218
 autoJump:false
 operatorItemsTab:true
 autoSuggestions:true
@@ -26,10 +26,6 @@ fov:0.625
 screenEffectScale:1.0
 fovEffectScale:1.0
 darknessEffectScale:1.0
-glintSpeed:1.0
-glintStrength:1.0
-damageTiltStrength:0.0
-highContrast:false
 gamma:1.0
 renderDistance:12
 simulationDistance:8
@@ -57,12 +53,12 @@ advancedItemTooltips:false
 pauseOnLostFocus:true
 overrideWidth:0
 overrideHeight:0
+heldItemTooltips:true
 chatHeightFocused:1.0
 chatDelay:0.0
 chatHeightUnfocused:0.4375
 chatScale:1.0
 chatWidth:1.0
-notificationDisplayTime:1.0
 mipmapLevels:0
 useNativeTransport:true
 mainHand:"right"
@@ -83,7 +79,6 @@ allowServerListing:true
 onlyShowSecureChat:false
 panoramaScrollSpeed:1.0
 telemetryOptInExtra:false
-onboardAccessibility:false
 key_key.attack:key.mouse.left
 key_key.use:key.mouse.right
 key_key.forward:key.keyboard.w

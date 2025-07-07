@@ -1,11 +1,67 @@
+import uuid
+import ssl
 import tkinter as tk
-from tkinter import ttk, messagebox, filedialog
 import minecraft_launcher_lib
+from tkinter import ttk, messagebox, filedialog
+import requests
+from minecraft_launcher_lib.command import get_minecraft_command
 import subprocess
 import threading
 import os
 import json
+import minecraft_launcher_lib.install as m_install
 import urllib.request
+import ssl
+from requests.adapters import HTTPAdapter
+from urllib3 import PoolManager
+import minecraft_launcher_lib.install as m_install
+import minecraft_launcher_lib.install as m_install
+import requests
+from requests.adapters import HTTPAdapter
+from urllib3 import PoolManager
+import ssl
+import ssl
+import requests
+from requests.adapters import HTTPAdapter
+from urllib3.poolmanager import PoolManager
+
+def install_version(version_id, minecraft_dir):
+    try:
+        print(f"Installing version {version_id}...")
+        minecraft_launcher_lib.install.install_minecraft_version(
+            version_id,
+            minecraft_dir
+        )
+        print("Installation complete.")
+        return True
+    except Exception as e:
+        print(f"Failed to install version {version_id}: {e}")
+        return False
+
+
+
+def fetch_minecraft_versions(minecraft_dir=None):
+    root = tk.Tk()
+    root.withdraw()  # Hide main window
+
+    file_path = filedialog.askopenfilename(
+        title="Select Minecraft Version Manifest JSON",
+        filetypes=[("JSON files", "*.json"), ("All files", "*.*")]
+    )
+
+    if not file_path:
+        messagebox.showerror("Error", "No file selected.")
+        return []
+
+    try:
+        with open(file_path, "r", encoding="utf-8") as f:
+            manifest = json.load(f)
+            versions = manifest.get("versions", [])
+            print(f"Loaded {len(versions)} versions from {file_path}.")
+            return versions
+    except Exception as e:
+        messagebox.showerror("Error", f"Failed to load version manifest: {e}")
+        return []
 
 CONFIG_FILE = "launcher_config.json"
 
@@ -94,10 +150,23 @@ class MinecraftLauncher(tk.Tk):
         self.geometry("700x600")
         self.protocol("WM_DELETE_WINDOW", self.on_close)
 
-        self.minecraft_dir = os.path.abspath(".")
         self.config = self.load_config()
+        self.minecraft_dir = self.config.get("minecraft_dir", "")
+
+        # Ask user to select Minecraft directory if not set or doesn't exist
+        while not self.minecraft_dir or not os.path.isdir(self.minecraft_dir):
+            messagebox.showinfo("Select Minecraft Directory", "Please select your Minecraft directory folder.")
+            selected_dir = filedialog.askdirectory(title="Select Minecraft Directory")
+            if not selected_dir:  # User cancelled, exit app
+                messagebox.showerror("Error", "Minecraft directory must be selected to continue.")
+                self.destroy()
+                return
+            self.minecraft_dir = selected_dir
+            self.config["minecraft_dir"] = selected_dir
+            self.save_config()
+
         self.profiles = self.config.get("profiles", {})
-        self.accounts = self.config.get("accounts", {})  # new
+        self.accounts = self.config.get("accounts", {})
         self.history = self.config.get("history", [])
         self.dark_mode = self.config.get("dark_mode", False)
 
@@ -409,53 +478,12 @@ class MinecraftLauncher(tk.Tk):
         self.fullscreen_var.set(False)
         self.width_entry.delete(0, tk.END)
         self.height_entry.delete(0, tk.END)
-        self.account_var.set("")
-
-    def save_current_profile(self):
-        profile_name = self.profile_var.get()
-        if not profile_name:
-            messagebox.showerror("Error", "No profile selected.")
-            return
-
-        username = self.username_entry.get().strip()
-        if not username:
-            messagebox.showerror("Error", "Username cannot be empty.")
-            return
-
-        try:
-            ram_gb = int(self.ram_entry.get().strip())
-            if ram_gb <= 0:
-                raise ValueError()
-        except ValueError:
-            messagebox.showerror("Error", "Max RAM must be a positive integer.")
-
-            return
-
-        try:
-            width = int(self.width_entry.get().strip())
-            height = int(self.height_entry.get().strip())
-        except ValueError:
-            messagebox.showerror("Error", "Width and Height must be integers.")
-            return
-
-        self.profiles[profile_name] = {
-            "username": username,
-            "version": self.version_var.get(),
-            "ram_gb": ram_gb,
-            "extra_jvm_args": self.jvm_args_entry.get().strip(),
-            "fullscreen": self.fullscreen_var.get(),
-            "width": width,
-            "height": height,
-        }
-        self.refresh_profile_list()
-        messagebox.showinfo("Saved", f"Profile '{profile_name}' saved.")
-        self.save_config()
 
     def load_profile(self, profile_name):
-        profile = self.profiles.get(profile_name)
-        if not profile:
+        if not profile_name or profile_name not in self.profiles:
+            self.clear_launch_fields()
             return
-        self.profile_var.set(profile_name)
+        profile = self.profiles[profile_name]
         self.username_entry.delete(0, tk.END)
         self.username_entry.insert(0, profile.get("username", ""))
         self.version_var.set(profile.get("version", ""))
@@ -469,205 +497,166 @@ class MinecraftLauncher(tk.Tk):
         self.height_entry.delete(0, tk.END)
         self.height_entry.insert(0, str(profile.get("height", 480)))
 
-    def launch_minecraft(self):
-        # Determine username & token from selected account or manual input
-        account_name = self.account_var.get()
-        username = None
-        token = None
-        mode = "offline"
-
-        if account_name and account_name in self.accounts:
-            acc = self.accounts[account_name]
-            username = acc.get("username")
-            mode = acc.get("mode", "offline")
-            token = acc.get("token", None)
-        else:
-            # fallback to manual username entry
-            username = self.username_entry.get().strip()
-
-        if not username:
-            messagebox.showerror("Error", "Please enter a username or select an account.")
+    def save_current_profile(self):
+        profile_name = self.profile_var.get()
+        if not profile_name:
+            messagebox.showerror("Error", "No profile selected to save.")
             return
-
-        version = self.version_var.get()
-        try:
-            ram_gb = int(self.ram_entry.get().strip())
-            if ram_gb <= 0:
-                raise ValueError()
-        except ValueError:
-            messagebox.showerror("Error", "Max RAM must be a positive integer.")
-            return
-
-        extra_jvm = self.jvm_args_entry.get().strip()
-        fullscreen = self.fullscreen_var.get()
-        try:
-            width = int(self.width_entry.get().strip())
-            height = int(self.height_entry.get().strip())
-        except ValueError:
-            messagebox.showerror("Error", "Width and Height must be integers.")
-            return
-
-        self.add_to_history(username, version)
-
-        self.append_log(f"Launching Minecraft {version} as '{username}' ({mode})...\n")
-        self.launch_button.config(state=tk.DISABLED)
-        threading.Thread(target=self._launch_minecraft_thread,
-                         args=(username, version, ram_gb, extra_jvm, fullscreen, width, height, mode, token), daemon=True).start()
-
-    def _launch_minecraft_thread(self, username, version, ram_gb, extra_jvm, fullscreen, width, height, mode, token):
-        try:
-            version_path = os.path.join(self.minecraft_dir, "versions", version)
-            if not os.path.exists(version_path):
-                self.append_log(f"Version folder missing: {version_path}\n")
-                messagebox.showerror("Error", f"Version {version} not found!")
-                return
-
-            jvm_args = [f"-Xmx{ram_gb}G"]
-            if extra_jvm:
-                jvm_args.extend(extra_jvm.split())
-
-            # Default to offline mode
-            options = {
-                "username": username,
-                "uuid": "offline-uuid",
-                "token": "0",
-                "jvm_args": jvm_args,
-                "launcher_name": "AdvancedOfflineLauncher",
-                "fullscreen": fullscreen,
-                "width": width,
-                "height": height,
-            }
-
-            if mode == "online" and token:
-                self.append_log(f"Using entered token for simulated online mode: {token}\n")
-                # Simulate a UUID and username based on the token
-                fake_uuid = "00000000-0000-0000-0000-" + token[:12].ljust(12, "0")
-                fake_username = username or ("Player_" + token[:5])
-                options["uuid"] = fake_uuid
-                options["token"] = token
-                options["username"] = fake_username
-
-            launch_command = minecraft_launcher_lib.command.get_minecraft_command(
-                version,
-                self.minecraft_dir,
-                options
-            )
-
-            proc = subprocess.Popen(
-                launch_command,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.STDOUT,
-                text=True,
-                encoding="utf-8",
-                errors="replace",
-                bufsize=1
-            )
-
-            for line in proc.stdout:
-                self.append_log(line)
-
-            proc.wait()
-            self.append_log(f"Minecraft exited with code {proc.returncode}\n")
-
-            if proc.returncode == 0:
-                messagebox.showinfo("Success", f"Minecraft exited successfully.")
-            else:
-                messagebox.showerror("Error", f"Minecraft exited with code {proc.returncode}")
-
-        except Exception as e:
-            self.append_log(f"Error launching Minecraft: {e}\n")
-            messagebox.showerror("Error", f"Failed to launch Minecraft:\n{e}")
-
-        finally:
-            self.launch_button.config(state=tk.NORMAL)
-
-    def append_log(self, text):
-        self.log_text.config(state=tk.NORMAL)
-        self.log_text.insert(tk.END, text)
-        self.log_text.see(tk.END)
-        self.log_text.config(state=tk.DISABLED)
-
-    def add_to_history(self, username, version):
-        entry = {"username": username, "version": version}
-        if entry in self.history:
-            self.history.remove(entry)
-        self.history.insert(0, entry)
-        if len(self.history) > 20:
-            self.history.pop()
-        self.config["history"] = self.history
+        self.profiles[profile_name] = {
+            "username": self.username_entry.get().strip(),
+            "version": self.version_var.get(),
+            "ram_gb": int(self.ram_entry.get() or 2),
+            "extra_jvm_args": self.jvm_args_entry.get(),
+            "fullscreen": self.fullscreen_var.get(),
+            "width": int(self.width_entry.get() or 854),
+            "height": int(self.height_entry.get() or 480),
+        }
         self.save_config()
-
-    def apply_theme(self):
-        style = ttk.Style(self)
-        if self.theme_var.get() == "Dark":
-            self.dark_mode = True
-            self.configure(bg="#2E2E2E")
-            style.theme_use('clam')
-            style.configure('.', background="#2E2E2E", foreground="white", fieldbackground="#454545")
-            style.map("TButton", background=[('active', '#5A5A5A')])
-        else:
-            self.dark_mode = False
-            self.configure(bg="#F0F0F0")
-            style.theme_use('default')
-            style.configure('.', background="#F0F0F0", foreground="black")
-
-    def on_theme_change(self):
-        self.apply_theme()
-        self.config['dark_mode'] = self.dark_mode
-        self.save_config()
+        self.refresh_profile_list()
+        messagebox.showinfo("Success", f"Profile '{profile_name}' saved.")
 
     def browse_mc_dir(self):
-        selected_dir = filedialog.askdirectory(initialdir=self.minecraft_dir, title="Select Minecraft Directory")
+        selected_dir = filedialog.askdirectory(title="Select Minecraft Directory", initialdir=self.minecraft_dir)
         if selected_dir:
             self.minecraft_dir = selected_dir
             self.mc_dir_var.set(selected_dir)
-            self.load_versions()
-            self.config['minecraft_dir'] = selected_dir
             self.save_config()
-
-    def load_versions(self):
-        versions = get_versions(self.minecraft_dir)
-        if not versions:
-            messagebox.showerror("Error", f"No Minecraft versions found in '{self.minecraft_dir}/versions'!")
-            self.version_combo['values'] = []
-            self.version_var.set('')
-            return
-        self.version_combo['values'] = versions
-        if self.version_var.get() not in versions:
-            self.version_var.set(versions[0])
-
-    def save_config(self):
-        self.config['profiles'] = self.profiles
-        self.config['accounts'] = self.accounts
-        self.config['last_profile'] = self.profile_var.get()
-        self.config['minecraft_dir'] = self.minecraft_dir
-        self.config['dark_mode'] = self.dark_mode
-        self.config['history'] = self.history
-        try:
-            with open(CONFIG_FILE, "w") as f:
-                json.dump(self.config, f, indent=4)
-        except Exception as e:
-            print(f"Error saving config: {e}")
+            self.load_versions()
 
     def load_config(self):
         if os.path.exists(CONFIG_FILE):
             try:
-                with open(CONFIG_FILE, "r") as f:
+                with open(CONFIG_FILE, "r", encoding="utf-8") as f:
                     return json.load(f)
-            except Exception:
-                return {}
+            except Exception as e:
+                messagebox.showerror("Error", f"Failed to load config: {e}")
         return {}
+
+    def save_config(self):
+        self.config["profiles"] = self.profiles
+        self.config["accounts"] = self.accounts
+        self.config["history"] = self.history
+        self.config["dark_mode"] = self.dark_mode
+        self.config["last_profile"] = self.profile_var.get()
+        self.config["minecraft_dir"] = self.minecraft_dir
+        try:
+            with open(CONFIG_FILE, "w", encoding="utf-8") as f:
+                json.dump(self.config, f, indent=4)
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to save config: {e}")
+
+    def load_versions(self):
+        # Ask user for manifest JSON on each load
+        try:
+            self.versions = fetch_minecraft_versions(self.minecraft_dir)  # user selects file dialog
+            versions_list = [v["id"] for v in self.versions]
+            self.version_combo['values'] = versions_list
+            if versions_list:
+                self.version_var.set(versions_list[-1])  # default to latest
+            else:
+                messagebox.showerror("Error", "No versions found in manifest.")
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to load versions: {e}")
+
+    def launch_minecraft(self):
+        username = self.username_entry.get().strip()
+        if not username:
+            messagebox.showerror("Error", "Username cannot be empty.")
+            return
+
+        version = self.version_var.get()
+        if not version:
+            messagebox.showerror("Error", "Please select a Minecraft version.")
+            return
+
+        def launch_thread():
+            try:
+                version_path = os.path.join(self.minecraft_dir, "versions", version)
+                if not os.path.exists(version_path):
+                    self.log(f"Version {version} not installed. Installing now...")
+                    success = install_version(version, self.minecraft_dir)
+                    if not success:
+                        self.log(f"Installation failed for version {version}")
+                        return
+                    self.log(f"Version {version} installed successfully.")
+                else:
+                    self.log(f"Version {version} already installed.")
+
+                self.log(f"Building launch command for Minecraft {version} as {username}...")
+
+                player_uuid = str(uuid.uuid3(uuid.NAMESPACE_DNS, username))
+
+                options = {
+                    "username": username,
+                    "uuid": player_uuid,
+                    "token": "", # empty for now
+                    "jvmArguments": ["-Xmx{}G".format(
+                        int(self.ram_entry.get() or 2))] + self.jvm_args_entry.get().split(),
+                    "launcherName": "AdvancedLauncher",
+                    "launcherVersion": "1.0",
+                    "customResolution": True,
+                    "resolutionWidth": str(int(self.width_entry.get() or 854)),
+                    "resolutionHeight": str(int(self.height_entry.get() or 480)),
+                }
+
+                cmd = get_minecraft_command(version, self.minecraft_dir, options)
+
+                self.log("Launching Minecraft...")
+                self.log(f"Command: {' '.join(cmd)}")
+
+                proc = subprocess.Popen(cmd, cwd=self.minecraft_dir, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                                        text=True)
+
+                for line in proc.stdout:
+                    self.log(line.strip())
+
+                proc.wait()
+                self.log("Minecraft process ended.")
+
+            except Exception as e:
+                self.log(f"Failed to launch Minecraft: {e}")
+
+        threading.Thread(target=launch_thread, daemon=True).start()
+
+    def log(self, text):
+        self.log_text.config(state=tk.NORMAL)
+        self.log_text.insert(tk.END, text + "\n")
+        self.log_text.see(tk.END)
+        self.log_text.config(state=tk.DISABLED)
+
+    def on_theme_change(self):
+        selected = self.theme_var.get()
+        self.dark_mode = selected == "Dark"
+        self.apply_theme()
+        self.save_config()
+
+    def apply_theme(self):
+        if self.dark_mode:
+            bg_color = "#2e2e2e"
+            fg_color = "#ffffff"
+        else:
+            bg_color = "#f0f0f0"
+            fg_color = "#000000"
+
+        style = ttk.Style()
+        style.theme_use('default')
+
+        style.configure('.', background=bg_color, foreground=fg_color)
+        style.configure('TLabel', background=bg_color, foreground=fg_color)
+        style.configure('TFrame', background=bg_color)
+        style.configure('TButton', background=bg_color)
+        style.configure('TCheckbutton', background=bg_color)
+        style.configure('TEntry', fieldbackground="#4d4d4d" if self.dark_mode else "white", foreground=fg_color)
+        style.configure('TCombobox', fieldbackground="#4d4d4d" if self.dark_mode else "white", foreground=fg_color)
+
+        self.configure(bg=bg_color)
 
     def on_close(self):
         self.save_config()
         self.destroy()
 
-def get_versions(minecraft_dir):
-    versions_folder = os.path.join(minecraft_dir, "versions")
-    if os.path.exists(versions_folder):
-        return sorted([v for v in os.listdir(versions_folder) if os.path.isdir(os.path.join(versions_folder, v))])
-    return []
 
 if __name__ == "__main__":
     app = MinecraftLauncher()
     app.mainloop()
+
