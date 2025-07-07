@@ -1,94 +1,102 @@
-# Offline_Launcher
+<p align="center">
+  <img src="logo.png" alt="Offline Launcher Logo" width="200"/>
+</p>
 
-A Custom Minecraft Launcher Written Entirely in Python 3.13  
-**Current Version:** Beta V0.4
+<h1 align="center">Offline_Launcher</h1>
+
+<p align="center"><b>A Custom Minecraft Launcher Written Entirely in Python 3.13</b></p>
+<p align="center"><b>Current Version: Beta V0.4</b></p>
 
 ---
 
 ## ✨ Features
 
-### 🧠 Core Features
-- **Offline Account Support**: Play without needing Mojang/Microsoft login.
-- **Online Account Support (Token-Based)**: Enter access tokens to authenticate (e.g. from EasyMC).
-- **Skin System (Beta)**: Allows linking `.png` skins to accounts for offline use *(still in testing)*.
+### 🧠 Core
+- 🟢 **Offline Account Support** — Play without Mojang/Microsoft login.
+- 🔵 **Online Account Support (Token-Based)** — Use access tokens (e.g. from EasyMC).
+- 🟡 **Skin System (Beta)** — Link `.png` skins to offline accounts (under testing).
 
 ---
 
 ### 🎮 Profile System
-- Create multiple **profiles** with separate settings:
+- Create and manage multiple **launch profiles**:
   - Minecraft version
   - JVM arguments
-  - Max RAM allocation
-  - Fullscreen mode toggle
-  - Custom resolution (window width & height)
+  - RAM allocation
+  - Fullscreen toggle
+  - Custom window size
   - Username
-- **Profile Manager UI**:
-  - Add, edit, delete, save profiles
-  - Automatically loads selected profile into the launch tab
+- 🖱️ Profile UI:
+  - Add / Edit / Delete / Save profiles
+  - Automatically loads selected profile into launch tab
 
 ---
 
 ### 👥 Account Manager
-- Create, edit, and delete Minecraft accounts
-- Supports both **offline** and **token-based online** accounts  
-  *(Online/token support coming fully in Release V0.1)*
-- Per-account skin file support *(still being tested)*
-- Username autofill from selected account
-- Integrated into launch tab for easy selection
+- Manage **offline** and **token-based online** accounts  
+  *(Online token support coming in Release V0.1)*  
+- Per-account skin file support *(in beta)*
+- Username autofill
+- Dropdown selector in Launch tab
 
 ---
 
-### 🗃️ Minecraft Version Management
-- Detects whether the selected version is installed
-- **Automatic Version Installation** using `minecraft-launcher-lib`
-- Requires a local **version manifest JSON** (must be in the same folder as the launcher)
+### 📦 Minecraft Version Management
+- 📂 Check if selected version is installed
+- 🔄 Auto-install versions using `minecraft-launcher-lib`
+- 📁 Manual loading of `version_manifest.json` (must be in same folder)
 
 ---
 
-### ⚙️ Advanced Launcher Settings
-- Set custom JVM arguments
-- Allocate RAM (in GB)
-- Toggle fullscreen
-- Set custom window resolution
+### ⚙️ Advanced Settings
+- Custom JVM arguments
+- RAM allocation (in GB)
+- Fullscreen toggle
+- Set window resolution (width & height)
 
 ---
 
-### 🪟 GUI Features
-- Clean **Tabbed Interface**:
-  - Launch tab
-  - Profile tab
-  - Account tab
-  - Settings tab *(placeholder for future features)*
-  - Console Log tab
+### 🖼️ GUI Features
+- Clean **tabbed interface** using `tkinter`:
+  - 🚀 Launch tab
+  - 🧾 Profiles tab
+  - 👤 Accounts tab
+  - ⚙️ Settings tab *(placeholder)*
+  - 📜 Console Log tab
 
 ---
 
-### 🧾 Console Log Viewer
-- Live output from Minecraft’s stdout/stderr
-- Helpful for debugging, modpacks, crashes, etc.
+### 📜 Console Output Viewer
+- Real-time Minecraft stdout/stderr log
+- Useful for tracking mod crashes and errors
 
 ---
 
-### 🌒 Dark Mode Support *(Early)*
-- Controlled via `launcher_config.json`
-- Full theming support planned
+### 🌙 Dark Mode (configurable)
+- Enabled via `launcher_config.json`  
+- Custom themes in future versions
 
 ---
 
-## 📂 Configuration and Persistence
-- All user data (accounts, profiles, settings) saved in `launcher_config.json`
-- Minecraft directory is saved and reused between sessions
-- First launch will ask for Minecraft folder if not already set
+## 💾 Persistence & Config
+- All settings stored in: `launcher_config.json`
+- Saves:
+  - Accounts
+  - Profiles
+  - Last selected Minecraft directory
+- Prompts for Minecraft directory on first launch
 
 ---
 
 ## 🛠️ Requirements
+
 - Python 3.13+
 - Dependencies:
   - `minecraft-launcher-lib`
-  - `tkinter` (usually bundled with Python)
   - `requests`
+  - `tkinter` *(usually pre-installed)*
 
-### 📦 Install Dependencies
+### 📥 Install Dependencies
+
 ```bash
 pip install minecraft-launcher-lib requests
