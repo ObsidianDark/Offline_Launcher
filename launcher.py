@@ -18,22 +18,33 @@ class AccountDialog(tk.Toplevel):
         self.username_var = tk.StringVar(value=initial.get("username") if initial else "")
         self.mode_var = tk.StringVar(value=initial.get("mode") if initial else "offline")
         self.token_var = tk.StringVar(value=initial.get("token") if initial else "")
+        self.skin_var = tk.StringVar(value=initial.get("skin") if initial else "")
 
+        # Username
         ttk.Label(self, text="Username:").grid(row=0, column=0, sticky="w", pady=5, padx=5)
         ttk.Entry(self, textvariable=self.username_var).grid(row=0, column=1, sticky="ew", pady=5, padx=5)
 
+        # Mode
         ttk.Label(self, text="Mode:").grid(row=1, column=0, sticky="w", pady=5, padx=5)
         mode_combo = ttk.Combobox(self, textvariable=self.mode_var, values=["offline", "online"], state="readonly")
         mode_combo.grid(row=1, column=1, sticky="ew", pady=5, padx=5)
         mode_combo.bind("<<ComboboxSelected>>", self.on_mode_change)
 
+        # Token
         ttk.Label(self, text="Token (online only):").grid(row=2, column=0, sticky="w", pady=5, padx=5)
         self.token_entry = ttk.Entry(self, textvariable=self.token_var)
         self.token_entry.grid(row=2, column=1, sticky="ew", pady=5, padx=5)
 
-        btn_frame = ttk.Frame(self)
-        btn_frame.grid(row=3, column=0, columnspan=2, pady=10)
+        # Skin File
+        ttk.Label(self, text="Skin System Beta (MAY NOT WORK):").grid(row=3, column=0, sticky="w", pady=5, padx=5)
+        self.skin_entry = ttk.Entry(self, textvariable=self.skin_var)
+        self.skin_entry.grid(row=3, column=1, sticky="ew", pady=5, padx=5)
+        self.skin_browse_btn = ttk.Button(self, text="Browse...", command=self.browse_skin)
+        self.skin_browse_btn.grid(row=3, column=2, sticky="ew", pady=5, padx=5)
 
+        # Buttons
+        btn_frame = ttk.Frame(self)
+        btn_frame.grid(row=4, column=0, columnspan=3, pady=10)
         ttk.Button(btn_frame, text="OK", command=self.on_ok).pack(side=tk.LEFT, padx=5)
         ttk.Button(btn_frame, text="Cancel", command=self.destroy).pack(side=tk.LEFT)
 
@@ -42,6 +53,14 @@ class AccountDialog(tk.Toplevel):
         self.on_mode_change()
         self.grab_set()
         self.wait_window(self)
+
+    def browse_skin(self):
+        file_path = filedialog.askopenfilename(
+            title="Select Skin Image",
+            filetypes=[("PNG Images", "*.png")],
+        )
+        if file_path:
+            self.skin_var.set(file_path)
 
     def on_mode_change(self, event=None):
         if self.mode_var.get() == "offline":
@@ -57,8 +76,16 @@ class AccountDialog(tk.Toplevel):
             return
         mode = self.mode_var.get()
         token = self.token_var.get().strip() if mode == "online" else None
-        self.result = {"username": username, "mode": mode, "token": token}
+        skin = self.skin_var.get().strip() or None
+
+        self.result = {
+            "username": username,
+            "mode": mode,
+            "token": token,
+            "skin": skin
+        }
         self.destroy()
+
 
 class MinecraftLauncher(tk.Tk):
     def __init__(self):
@@ -499,6 +526,7 @@ class MinecraftLauncher(tk.Tk):
             if extra_jvm:
                 jvm_args.extend(extra_jvm.split())
 
+            # Default to offline mode
             options = {
                 "username": username,
                 "uuid": "offline-uuid",
@@ -511,8 +539,13 @@ class MinecraftLauncher(tk.Tk):
             }
 
             if mode == "online" and token:
-                options["uuid"] = "online-uuid"  # Optionally set real UUID here if you have it
+                self.append_log(f"Using entered token for simulated online mode: {token}\n")
+                # Simulate a UUID and username based on the token
+                fake_uuid = "00000000-0000-0000-0000-" + token[:12].ljust(12, "0")
+                fake_username = username or ("Player_" + token[:5])
+                options["uuid"] = fake_uuid
                 options["token"] = token
+                options["username"] = fake_username
 
             launch_command = minecraft_launcher_lib.command.get_minecraft_command(
                 version,
@@ -520,7 +553,15 @@ class MinecraftLauncher(tk.Tk):
                 options
             )
 
-            proc = subprocess.Popen(launch_command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, bufsize=1)
+            proc = subprocess.Popen(
+                launch_command,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                text=True,
+                encoding="utf-8",
+                errors="replace",
+                bufsize=1
+            )
 
             for line in proc.stdout:
                 self.append_log(line)
