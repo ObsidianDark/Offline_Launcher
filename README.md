@@ -10,7 +10,7 @@ A Custom Minecraft Launcher Written Entirely in Python 3.13
 ### 🧠 Core Features
 - **Offline Account Support**: Play without needing Mojang/Microsoft login.
 - **Online Account Support (Token-Based)**: Enter access tokens to authenticate (e.g. from EasyMC).
-- **Skin System (Beta)**: Allows linking `.png` skins to accounts for offline use.
+- **Skin System (Beta)**: Allows linking `.png` skins to accounts for offline use *(still in testing)*.
 
 ---
 
@@ -24,23 +24,24 @@ A Custom Minecraft Launcher Written Entirely in Python 3.13
   - Username
 - **Profile Manager UI**:
   - Add, edit, delete, save profiles
-  - Automatically loads selected profile into launch tab
+  - Automatically loads selected profile into the launch tab
 
 ---
 
 ### 👥 Account Manager
 - Create, edit, and delete Minecraft accounts
-- Supports both **offline** and **token-based online** accounts (Though token based accounts are going to be added in the Rel-V0.1)
-- Per-account skin file support (Still In Testing)
+- Supports both **offline** and **token-based online** accounts  
+  *(Online/token support coming fully in Release V0.1)*
+- Per-account skin file support *(still being tested)*
 - Username autofill from selected account
 - Integrated into launch tab for easy selection
 
 ---
 
 ### 🗃️ Minecraft Version Management
-- Detects whether selected version is installed
+- Detects whether the selected version is installed
 - **Automatic Version Installation** using `minecraft-launcher-lib`
-- Manual loading of version manifest JSON if needed (Witch is needed and is found in the same folder)
+- Requires a local **version manifest JSON** (must be in the same folder as the launcher)
 
 ---
 
@@ -48,36 +49,36 @@ A Custom Minecraft Launcher Written Entirely in Python 3.13
 - Set custom JVM arguments
 - Allocate RAM (in GB)
 - Toggle fullscreen
-- Set window resolution
+- Set custom window resolution
 
 ---
 
 ### 🪟 GUI Features
-- **Tabbed Interface** with:
+- Clean **Tabbed Interface**:
   - Launch tab
   - Profile tab
   - Account tab
-  - Settings tab (placeholder/future features)
+  - Settings tab *(placeholder for future features)*
   - Console Log tab
 
 ---
 
 ### 🧾 Console Log Viewer
-- Live output of Minecraft's stdout/stderr
-- Useful for debugging modpacks or crashes
+- Live output from Minecraft’s stdout/stderr
+- Helpful for debugging, modpacks, crashes, etc.
 
 ---
 
-### 🌒 Optional Dark Mode Support (config entry)
-- Stored in `launcher_config.json`
-- More theme customizations coming soon
+### 🌒 Dark Mode Support *(Early)*
+- Controlled via `launcher_config.json`
+- Full theming support planned
 
 ---
 
 ## 📂 Configuration and Persistence
-- All data (accounts, profiles, settings) stored in `launcher_config.json`
-- Minecraft directory is persistent across restarts
-- First launch will prompt to select Minecraft folder
+- All user data (accounts, profiles, settings) saved in `launcher_config.json`
+- Minecraft directory is saved and reused between sessions
+- First launch will ask for Minecraft folder if not already set
 
 ---
 
@@ -85,10 +86,9 @@ A Custom Minecraft Launcher Written Entirely in Python 3.13
 - Python 3.13+
 - Dependencies:
   - `minecraft-launcher-lib`
-  - `tkinter` (usually included)
+  - `tkinter` (usually bundled with Python)
   - `requests`
 
-Install dependencies with:
-
+### 📦 Install Dependencies
 ```bash
 pip install minecraft-launcher-lib requests
