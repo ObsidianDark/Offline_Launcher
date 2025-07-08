@@ -8,6 +8,8 @@ import os
 import json
 import minecraft_launcher_lib.install as m_install
 import urllib.request
+
+from PIL import ImageTk, Image
 from minecraft_launcher_lib import command
 
 def install_version(version_id, minecraft_dir):
@@ -43,9 +45,23 @@ CONFIG_FILE = "launcher_config.json"
 class AccountDialog(tk.Toplevel):
     def __init__(self, parent, title=None, initial=None):
         super().__init__(parent)
+
+        try:
+            icon_path_ico = os.path.join(os.path.dirname(os.path.abspath(__file__)), "logo.ico")
+            self.iconbitmap(icon_path_ico)
+        except Exception as e:
+            print("iconbitmap error:", e)
+
+        try:
+            icon_path_png = os.path.join(os.path.dirname(os.path.abspath(__file__)), "logo.png")
+            img = Image.open(icon_path_png)
+            photo = ImageTk.PhotoImage(img)
+            self.iconphoto(False, photo)
+        except Exception as e:
+            print("iconphoto error:", e)
+
         self.result = None
         self.title(title or "Account")
-
         self.username_var = tk.StringVar(value=initial.get("username") if initial else "")
         self.mode_var = tk.StringVar(value=initial.get("mode") if initial else "offline")
         self.token_var = tk.StringVar(value=initial.get("token") if initial else "")
@@ -121,6 +137,21 @@ class AccountDialog(tk.Toplevel):
 class MinecraftLauncher(tk.Tk):
     def __init__(self):
         super().__init__()
+
+        try:
+            icon_path_ico = os.path.join(os.path.dirname(os.path.abspath(__file__)), "logo.ico")
+            self.iconbitmap(icon_path_ico)
+        except Exception as e:
+            print("iconbitmap error:", e)
+
+        try:
+            icon_path_png = os.path.join(os.path.dirname(os.path.abspath(__file__)), "logo.png")
+            img = Image.open(icon_path_png)
+            photo = ImageTk.PhotoImage(img)
+            self.iconphoto(False, photo)
+        except Exception as e:
+            print("iconphoto error:", e)
+
         self.title("Advanced Offline Minecraft Launcher")
         self.geometry("700x600")
         self.protocol("WM_DELETE_WINDOW", self.on_close)
