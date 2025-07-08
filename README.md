@@ -22,8 +22,6 @@
 - 🔵 **Online Account Support (Token-Based)** — Use access tokens (under testing).
 - 🟡 **Skin System (Beta)** — Link `.png` skins to offline accounts (under testing).
 
----
-
 ### 🎮 Profile System
 - Create and manage multiple **launch profiles**:
   - Minecraft version
@@ -36,8 +34,6 @@
   - Add / Edit / Delete / Save profiles
   - Automatically loads selected profile into launch tab
 
----
-
 ### 👥 Account Manager
 - Manage **offline** and **token-based online** accounts  
   *(Online token support coming in Release V0.1)*  
@@ -45,22 +41,16 @@
 - Username autofill
 - Dropdown selector in Launch tab
 
----
-
 ### 📦 Minecraft Version Management
 - 📂 Check if selected version is installed
 - 🔄 Auto-install versions using `minecraft-launcher-lib`
 - 📁 Manual loading of `version_manifest.json` (must be in same folder)
-
----
 
 ### ⚙️ Advanced Settings
 - Custom JVM arguments
 - RAM allocation (in GB)
 - Fullscreen toggle
 - Set window resolution (width & height)
-
----
 
 ### 🖼️ GUI Features
 - Clean **tabbed interface** using `tkinter`:
@@ -70,13 +60,9 @@
   - ⚙️ Settings tab *(placeholder)*
   - 📜 Console Log tab
 
----
-
 ### 📜 Console Output Viewer
 - Real-time Minecraft stdout/stderr log
 - Useful for tracking mod crashes and errors
-
----
 
 ### 🌙 Dark Mode (configurable)
 - Enabled via `launcher_config.json`  
@@ -94,11 +80,28 @@
 
 ---
 
-## 🐛 Bugs
+## 🐞 Known Bugs & Issues
+- Launcher may fail to open if configuration files are corrupted.  
+  *Fix:* Delete `launcher_config.json` or `launcher.json` to reset (will lose saved profiles/accounts).
+- Online token login is still experimental; may not work reliably.
+- Skin system is in beta and can occasionally fail to load skins.
+- Some Minecraft versions may fail to auto-install due to network issues.
+- Dark mode may not apply consistently on all UI elements.
 
-If the launcher isn't opening, try deleting `launcher_config.json` or `launcher.json`.
+---
 
-⚠️ This will reset your saved accounts and profiles.
+## 🚧 Things That Need To Be Added
+- ✅ Full online login support with Microsoft OAuth flow
+- ✅ Automatic skin download from Mojang servers for online accounts
+- ✅ Mod support (loading and launching Forge/Fabric mods)
+- ✅ Custom resource pack management
+- ✅ Profile export/import
+- ✅ Configurable launcher themes
+- ✅ Better error handling and user-friendly messages
+- ✅ Localization / multi-language support
+- ✅ Launcher auto-update mechanism
+- ✅ Support for additional platforms (macOS, other Linux distros)
+- ✅ Integration with popular Minecraft server lists
 
 ---
 
@@ -108,11 +111,14 @@ If the launcher isn't opening, try deleting `launcher_config.json` or `launcher.
 - Dependencies:
   - `minecraft-launcher-lib`
   - `requests`
-  - `tkinter` *(usually pre-installed)*
+  - `tkinter` *(usually pre-installed with Python)*
 
 ---
 
-### 📥 Install Dependencies
+## 📥 Installation
+
+1. Clone this repository or download the ZIP and extract it.
+2. Install required packages:
 
 ```bash
 pip install minecraft-launcher-lib requests
