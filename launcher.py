@@ -619,16 +619,17 @@ class MinecraftLauncher(tk.Tk):
                     self.log(f"Version {version} not installed. Installing now...")
                     callback = minecraft_launcher_lib.install.install_minecraft_version(version, self.minecraft_dir)
 
-                    # Poll callback until True, with timeout
-                    start_time = time.time()
-                    while not callback():
-                        self.log("Installing... waiting...")
-                        time.sleep(0.5)
-                        # Timeout after 5 mins
-                        if time.time() - start_time > 300:
-                            self.log("Installation timeout after 5 minutes.")
-                            messagebox.showerror("Error", "Minecraft version installation timed out.")
-                            return
+                    if callback is None:
+                        self.log(f"Install function returned None, assuming install started or completed instantly.")
+                    else:
+                        start_time = time.time()
+                        while not callback():
+                            self.log("Installing... waiting...")
+                            time.sleep(0.5)
+                            if time.time() - start_time > 300:
+                                self.log("Installation timeout after 5 minutes.")
+                                messagebox.showerror("Error", "Minecraft version installation timed out.")
+                                return
 
                     self.log(f"Version {version} installed successfully.")
                 else:
@@ -666,10 +667,13 @@ class MinecraftLauncher(tk.Tk):
         threading.Thread(target=launch_thread, daemon=True).start()
 
     def log(self, message):
-        self.log_text.config(state=tk.NORMAL)
-        self.log_text.insert(tk.END, message + "\n")
-        self.log_text.see(tk.END)
-        self.log_text.config(state=tk.DISABLED)
+        def append():
+            self.log_text.config(state=tk.NORMAL)
+            self.log_text.insert(tk.END, message + "\n")
+            self.log_text.see(tk.END)
+            self.log_text.config(state=tk.DISABLED)
+
+        self.after(0, append)
 
     def on_theme_change(self):
         selected = self.theme_var.get()
