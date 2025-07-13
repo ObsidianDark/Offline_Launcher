@@ -1,62 +1,51 @@
-[10:06:54] [Datafixer Bootstrap/INFO]: 269 Datafixer optimizations took 521 milliseconds
-[10:06:58] [main/WARN]: Invalid UUID: 'Not-Assigned-Yet
-[10:06:58] [Render thread/INFO]: Environment: Environment[sessionHost=https://sessionserver.mojang.com, servicesHost=https://api.minecraftservices.com, name=PROD]
-[10:06:58] [Render thread/INFO]: Setting user: obsidianmode
-[10:06:59] [Render thread/INFO]: Backend library: LWJGL version 3.3.3+5
-[10:06:59] [Render thread/INFO]: Using optional rendering extensions: GL_ARB_buffer_storage, GL_KHR_debug, GL_ARB_vertex_attrib_binding, GL_ARB_direct_state_access
-[10:07:00] [Download-2/ERROR]: Failed to fetch user properties
+[14:39:06] [Datafixer Bootstrap/INFO]: 226 Datafixer optimizations took 601 milliseconds
+[14:39:12] [Render thread/INFO]: Environment: Environment[sessionHost=https://sessionserver.mojang.com, servicesHost=https://api.minecraftservices.com, name=PROD]
+[14:39:12] [Render thread/INFO]: Setting user: aaaa
+[14:39:12] [Render thread/INFO]: Backend library: LWJGL version 3.3.3+5
+[14:39:13] [Download-2/ERROR]: Failed to fetch user properties
 com.mojang.authlib.exceptions.InvalidCredentialsException: Status: 401
-	at com.mojang.authlib.exceptions.MinecraftClientHttpException.toAuthenticationException(MinecraftClientHttpException.java:59) ~[authlib-6.0.58.jar:?]
-	at com.mojang.authlib.yggdrasil.YggdrasilUserApiService.fetchProperties(YggdrasilUserApiService.java:150) ~[authlib-6.0.58.jar:?]
-	at fud.bP(SourceFile:463) ~[1.21.6.jar:?]
+	at com.mojang.authlib.exceptions.MinecraftClientHttpException.toAuthenticationException(MinecraftClientHttpException.java:59) ~[authlib-6.0.54.jar:?]
+	at com.mojang.authlib.yggdrasil.YggdrasilUserApiService.fetchProperties(YggdrasilUserApiService.java:150) ~[authlib-6.0.54.jar:?]
+	at fgo.bK(SourceFile:458) ~[1.21.jar:?]
 	at java.base/java.util.concurrent.CompletableFuture$AsyncSupply.run(CompletableFuture.java:1768) ~[?:?]
 	at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1144) ~[?:?]
 	at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:642) ~[?:?]
 	at java.base/java.lang.Thread.run(Thread.java:1583) [?:?]
 Caused by: com.mojang.authlib.exceptions.MinecraftClientHttpException: Status: 401
-	at com.mojang.authlib.minecraft.client.MinecraftClient.readInputStream(MinecraftClient.java:103) ~[authlib-6.0.58.jar:?]
-	at com.mojang.authlib.minecraft.client.MinecraftClient.get(MinecraftClient.java:56) ~[authlib-6.0.58.jar:?]
-	at com.mojang.authlib.yggdrasil.YggdrasilUserApiService.fetchProperties(YggdrasilUserApiService.java:121) ~[authlib-6.0.58.jar:?]
+	at com.mojang.authlib.minecraft.client.MinecraftClient.readInputStream(MinecraftClient.java:100) ~[authlib-6.0.54.jar:?]
+	at com.mojang.authlib.minecraft.client.MinecraftClient.get(MinecraftClient.java:57) ~[authlib-6.0.54.jar:?]
+	at com.mojang.authlib.yggdrasil.YggdrasilUserApiService.fetchProperties(YggdrasilUserApiService.java:121) ~[authlib-6.0.54.jar:?]
 	... 5 more
-[10:07:00] [Render thread/INFO]: Reloading ResourceManager: vanilla
-[10:07:00] [Worker-Main-9/INFO]: Found unifont_all_no_pua-16.0.03.hex, loading
-[10:07:00] [Worker-Main-10/INFO]: Found unifont_pua-16.0.03.hex, loading
-[10:07:00] [Worker-Main-2/INFO]: Found unifont_jp_patch-16.0.03.hex, loading
-[10:07:01] [Download-2/INFO]: Could not authorize you against Realms server: java.lang.RuntimeException: Failed to parse into SignedJWT: Not-Assigned-Yet
-[10:07:01] [Download-2/ERROR]: Failed to fetch Realms feature flags
-fqw: Realms authentication error with message 'java.lang.RuntimeException: Failed to parse into SignedJWT: Not-Assigned-Yet'
-	at fop.a(SourceFile:538) ~[1.21.6.jar:?]
-	at fop.o(SourceFile:191) ~[1.21.6.jar:?]
+[14:39:14] [Render thread/INFO]: Reloading ResourceManager: vanilla
+[14:39:15] [Worker-Main-9/INFO]: Found unifont_all_no_pua-15.1.05.hex, loading
+[14:39:15] [Worker-Main-5/INFO]: Found unifont_jp_patch-15.1.05.hex, loading
+[14:39:18] [Render thread/WARN]: Missing sound for event: minecraft:item.goat_horn.play
+[14:39:18] [Render thread/WARN]: Missing sound for event: minecraft:entity.goat.screaming.horn_break
+[14:39:19] [Render thread/INFO]: OpenAL initialized on device OpenAL Soft on Hoparlör (Realtek(R) Audio)
+[14:39:19] [Render thread/INFO]: Sound engine started
+[14:39:19] [Render thread/INFO]: Created: 1024x512x0 minecraft:textures/atlas/blocks.png-atlas
+[14:39:19] [Render thread/INFO]: Created: 256x256x0 minecraft:textures/atlas/signs.png-atlas
+[14:39:19] [Render thread/INFO]: Created: 512x512x0 minecraft:textures/atlas/banner_patterns.png-atlas
+[14:39:19] [Render thread/INFO]: Created: 512x512x0 minecraft:textures/atlas/shield_patterns.png-atlas
+[14:39:19] [Render thread/INFO]: Created: 1024x1024x0 minecraft:textures/atlas/armor_trims.png-atlas
+[14:39:19] [Render thread/INFO]: Created: 256x256x0 minecraft:textures/atlas/chest.png-atlas
+[14:39:19] [Render thread/INFO]: Created: 128x64x0 minecraft:textures/atlas/decorated_pot.png-atlas
+[14:39:19] [Render thread/INFO]: Created: 512x256x0 minecraft:textures/atlas/shulker_boxes.png-atlas
+[14:39:19] [Render thread/INFO]: Created: 512x256x0 minecraft:textures/atlas/beds.png-atlas
+[14:39:19] [Render thread/INFO]: Created: 512x256x0 minecraft:textures/atlas/particles.png-atlas
+[14:39:19] [Render thread/INFO]: Created: 512x256x0 minecraft:textures/atlas/paintings.png-atlas
+[14:39:19] [Render thread/INFO]: Created: 256x128x0 minecraft:textures/atlas/mob_effects.png-atlas
+[14:39:19] [Render thread/INFO]: Created: 64x64x0 minecraft:textures/atlas/map_decorations.png-atlas
+[14:39:19] [Render thread/INFO]: Created: 1024x512x0 minecraft:textures/atlas/gui.png-atlas
+[14:39:19] [Render thread/WARN]: Shader rendertype_entity_translucent_emissive could not find sampler named Sampler2 in the specified shader program.
+[14:39:20] [IO-Worker-1/INFO]: Could not authorize you against Realms server: javax.ws.rs.BadRequestException: Invalid session
+[14:39:20] [IO-Worker-1/ERROR]: Couldn't connect to realms
+fdj: Realms authentication error with message 'javax.ws.rs.BadRequestException: Invalid session'
+	at fby.a(SourceFile:447) ~[1.21.jar:?]
+	at fby.g(SourceFile:232) ~[1.21.jar:?]
+	at fbs.c(SourceFile:51) ~[1.21.jar:?]
 	at java.base/java.util.concurrent.CompletableFuture$AsyncSupply.run(CompletableFuture.java:1768) ~[?:?]
 	at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1144) ~[?:?]
 	at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:642) ~[?:?]
 	at java.base/java.lang.Thread.run(Thread.java:1583) [?:?]
-[10:07:01] [Render thread/INFO]: OpenAL initialized on device OpenAL Soft on Hoparlör (Realtek(R) Audio)
-[10:07:01] [Render thread/INFO]: Sound engine started
-[10:07:01] [Render thread/INFO]: Created: 1024x512x0 minecraft:textures/atlas/blocks.png-atlas
-[10:07:01] [Render thread/INFO]: Created: 256x256x0 minecraft:textures/atlas/signs.png-atlas
-[10:07:01] [Render thread/INFO]: Created: 512x512x0 minecraft:textures/atlas/shield_patterns.png-atlas
-[10:07:01] [Render thread/INFO]: Created: 512x512x0 minecraft:textures/atlas/banner_patterns.png-atlas
-[10:07:01] [Render thread/INFO]: Created: 2048x1024x0 minecraft:textures/atlas/armor_trims.png-atlas
-[10:07:01] [Render thread/INFO]: Created: 128x64x0 minecraft:textures/atlas/decorated_pot.png-atlas
-[10:07:01] [Render thread/INFO]: Created: 256x256x0 minecraft:textures/atlas/chest.png-atlas
-[10:07:01] [Render thread/INFO]: Created: 512x256x0 minecraft:textures/atlas/shulker_boxes.png-atlas
-[10:07:01] [Render thread/INFO]: Created: 512x256x0 minecraft:textures/atlas/beds.png-atlas
-[10:07:01] [Render thread/INFO]: Created: 64x64x0 minecraft:textures/atlas/map_decorations.png-atlas
-[10:07:01] [Render thread/INFO]: Created: 512x256x0 minecraft:textures/atlas/particles.png-atlas
-[10:07:01] [Render thread/INFO]: Created: 512x256x0 minecraft:textures/atlas/paintings.png-atlas
-[10:07:01] [Render thread/INFO]: Created: 1024x512x0 minecraft:textures/atlas/gui.png-atlas
-[10:07:02] [IO-Worker-1/INFO]: Could not authorize you against Realms server: java.lang.RuntimeException: Failed to parse into SignedJWT: Not-Assigned-Yet
-[10:07:02] [IO-Worker-1/ERROR]: Couldn't connect to realms
-fqw: Realms authentication error with message 'java.lang.RuntimeException: Failed to parse into SignedJWT: Not-Assigned-Yet'
-	at fop.a(SourceFile:538) ~[1.21.6.jar:?]
-	at fop.i(SourceFile:318) ~[1.21.6.jar:?]
-	at foj.c(SourceFile:51) ~[1.21.6.jar:?]
-	at java.base/java.util.concurrent.CompletableFuture$AsyncSupply.run(CompletableFuture.java:1768) ~[?:?]
-	at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1144) ~[?:?]
-	at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:642) ~[?:?]
-	at java.base/java.lang.Thread.run(Thread.java:1583) [?:?]
-[10:07:05] [Render thread/INFO]: Resizing Dynamic Transforms UBO, capacity limit of 2 reached during a single frame. New capacity will be 4.
-[10:07:07] [Render thread/INFO]: Loaded 1407 recipes
-[10:07:07] [Render thread/INFO]: Loaded 1520 advancements
-[10:07:12] [Render thread/INFO]: Stopping!
+[14:39:22] [Render thread/INFO]: Stopping!
