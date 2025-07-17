@@ -1,4 +1,4 @@
-version:4435
+version:4440
 ao:false
 biomeBlendRadius:0
 enableVsync:false
@@ -12,7 +12,7 @@ darknessEffectScale:1.0
 glintSpeed:0.5
 glintStrength:0.75
 prioritizeChunkUpdates:0
-fullscreen:true
+fullscreen:false
 gamma:1.0
 graphicsMode:0
 guiScale:3

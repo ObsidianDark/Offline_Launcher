@@ -9,29 +9,119 @@ import json
 import shutil
 import urllib.request
 import xml.etree.ElementTree as ET
+import re
+import random
+import string
 
-from PIL import ImageTk, Image
 from minecraft_launcher_lib import command
+from uuid import uuid4, uuid3, NAMESPACE_DNS
 
 CONFIG_FILE = "launcher_config.json"
 MOD_LOADERS = ["vanilla", "forge", "fabric"]
 
+# Your secret token - only players with this token in username can join
+LAUNCHER_SECRET_TOKEN = "¨"
+
+# Sample 16-word list for name generation (expand as needed)
+WORD_LIST_16 = [
+    "apple", "banana", "cherry", "date",
+    "elder", "fig", "grape", "hazel",
+    "iris", "juniper", "kiwi", "lemon",
+    "mango", "nectar", "olive", "pear",
+]
+
+def generate_secret_token(length=8):
+    chars = string.ascii_letters + string.digits + "!@#$%^&*()-_=+"
+    return ''.join(random.choice(chars) for _ in range(length))
+
+def offline_uuid(username):
+    return str(uuid3(NAMESPACE_DNS, f"OfflinePlayer:{username}"))
+
+def grant_op(minecraft_dir, username):
+    ops_path = os.path.join(minecraft_dir, "ops.json")
+    uuid = offline_uuid(username)
+    entry = {
+        "uuid": uuid,
+        "name": username,
+        "level": 4,
+        "bypassesPlayerLimit": True
+    }
+
+    try:
+        if os.path.exists(ops_path):
+            with open(ops_path, "r", encoding="utf-8") as f:
+                ops = json.load(f)
+        else:
+            ops = []
+
+        if not any(op.get("uuid") == uuid for op in ops):
+            ops.append(entry)
+            with open(ops_path, "w", encoding="utf-8") as f:
+                json.dump(ops, f, indent=4)
+    except Exception as e:
+        print(f"Error updating ops.json: {e}")
+
+def get_latest_server_jar_url():
+    manifest_url = "https://launchermeta.mojang.com/mc/game/version_manifest.json"
+    try:
+        with urllib.request.urlopen(manifest_url) as response:
+            data = json.loads(response.read())
+        latest_version = data["latest"]["release"]
+        version_info_url = None
+        for v in data["versions"]:
+            if v["id"] == latest_version:
+                version_info_url = v["url"]
+                break
+        if not version_info_url:
+            print("Could not find latest version info URL")
+            return None
+        with urllib.request.urlopen(version_info_url) as response:
+            version_data = json.loads(response.read())
+        server_url = version_data["downloads"]["server"]["url"]
+        return server_url
+    except Exception as e:
+        print(f"Failed to fetch latest server.jar URL: {e}")
+        return None
+
+def token_to_name(token):
+    """
+    Convert the token string into a deterministic 16-word name
+    using the WORD_LIST_16.
+    """
+    # Convert token to bytes
+    token_bytes = token.encode('utf-8')
+    words = []
+    for i in range(16):
+        # Use bytes cyclically for index calculation
+        b = token_bytes[i % len(token_bytes)]
+        idx = b % len(WORD_LIST_16)
+        words.append(WORD_LIST_16[idx])
+    return "_".join(words)
+
 class MinecraftLauncher(tk.Tk):
+
     def on_close(self):
         self.save_config()
+        self.stop_server_process()
         self.destroy()
 
     def __init__(self):
         super().__init__()
         self.title("Advanced Offline Minecraft Launcher")
-        self.geometry("700x700")
+        self.geometry("700x820")
         self.protocol("WM_DELETE_WINDOW", self.on_close)
 
         self.minecraft_dir = os.path.dirname(os.path.abspath(__file__))
+        self.server_dir = os.path.join(self.minecraft_dir, "server")
+        os.makedirs(self.server_dir, exist_ok=True)
+
         self.config = self.load_config()
         self.profiles = self.config.get("profiles", {})
         self.history = self.config.get("history", [])
         self.dark_mode = self.config.get("dark_mode", False)
+
+        self.server_process = None
+        self.server_thread = None
 
         self.create_widgets()
         self.apply_theme()
@@ -44,7 +134,14 @@ class MinecraftLauncher(tk.Tk):
             self.mods_folder_var.set(folder)
 
     def create_widgets(self):
-        frame = ttk.Frame(self)
+        notebook = ttk.Notebook(self)
+        notebook.pack(fill=tk.BOTH, expand=True)
+
+        # --- Launcher Tab ---
+        launcher_frame = ttk.Frame(notebook)
+        notebook.add(launcher_frame, text="Launcher")
+
+        frame = ttk.Frame(launcher_frame)
         frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
 
         row = 0
@@ -110,13 +207,50 @@ class MinecraftLauncher(tk.Tk):
         self.launch_button = ttk.Button(frame, text="Launch Minecraft", command=self.launch_minecraft)
         self.launch_button.grid(row=row, column=0, columnspan=3, pady=10)
 
+        row += 1
+        self.reset_token_button = ttk.Button(frame, text="Reset Secret Token", command=self.reset_secret_token)
+        self.reset_token_button.grid(row=row, column=0, columnspan=3, pady=(0,10))
+
+        row += 1
+        # --- New toggle for token-as-name ---
+        self.use_token_name_var = tk.BooleanVar(value=False)
+        self.token_name_check = ttk.Checkbutton(frame, text="Use token as name (16 words)", variable=self.use_token_name_var)
+        self.token_name_check.grid(row=row, column=0, columnspan=3, sticky="w")
+
         frame.columnconfigure(1, weight=1)
 
-        self.log_text = tk.Text(self, height=10, state=tk.DISABLED)
-        self.log_text.pack(fill=tk.BOTH, expand=True)
+        self.log_text = tk.Text(launcher_frame, height=10, state=tk.DISABLED)
+        self.log_text.pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
 
         # Disable Forge version combobox initially
         self.forge_version_combo.config(state=tk.DISABLED)
+
+        # --- Server Tab ---
+        server_frame = ttk.Frame(notebook)
+        notebook.add(server_frame, text="Server")
+
+        server_controls = ttk.Frame(server_frame)
+        server_controls.pack(fill=tk.X, padx=10, pady=10)
+
+        self.download_button = ttk.Button(server_controls, text="Download Server.jar", command=self.download_server_jar)
+        self.download_button.pack(side=tk.LEFT, padx=5)
+
+        self.start_server_button = ttk.Button(server_controls, text="Start Server", command=self.start_server)
+        self.start_server_button.pack(side=tk.LEFT, padx=5)
+
+        self.stop_server_button = ttk.Button(server_controls, text="Stop Server", command=self.stop_server_process, state=tk.DISABLED)
+        self.stop_server_button.pack(side=tk.LEFT, padx=5)
+
+        self.server_log_text = tk.Text(server_frame, height=20, state=tk.DISABLED)
+        self.server_log_text.pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
+
+    def reset_secret_token(self):
+        global LAUNCHER_SECRET_TOKEN
+        LAUNCHER_SECRET_TOKEN = generate_secret_token()
+        messagebox.showinfo("Secret Token Reset",
+                            f"The secret token has been reset to:\n\n{LAUNCHER_SECRET_TOKEN}\n\n"
+                            "Make sure to share this new token with your players.")
+        self.log(f"Secret token reset: {LAUNCHER_SECRET_TOKEN}")
 
     def load_config(self):
         if os.path.exists(CONFIG_FILE):
@@ -175,7 +309,6 @@ class MinecraftLauncher(tk.Tk):
 
         def fetch_and_update():
             versions = []
-            # Try minecraft_launcher_lib method first
             try:
                 import minecraft_launcher_lib.forge as forge_mod
                 if hasattr(forge_mod, "get_forge_versions"):
@@ -183,17 +316,15 @@ class MinecraftLauncher(tk.Tk):
             except Exception as e:
                 self.log(f"Failed to get Forge versions via minecraft_launcher_lib: {e}")
 
-            # Fallback to Maven scraping if no versions found
             if not versions:
                 versions = fetch_forge_versions_maven(mc_version)
 
             if versions:
-                # Sort versions descending (latest first)
                 versions.sort(reverse=True)
                 self.forge_version_combo.config(values=versions)
                 self.forge_version_var.set(versions[0])
                 self.forge_version_combo.config(state=tk.NORMAL)
-                self.log(f"Found Forge versions for Minecraft: {', '.join(versions[:10])}...")
+                self.log(f"Found Forge versions: {', '.join(versions[:10])}...")
             else:
                 self.forge_version_combo.config(values=[])
                 self.forge_version_var.set("")
@@ -204,6 +335,15 @@ class MinecraftLauncher(tk.Tk):
 
     def launch_minecraft(self):
         username = self.username_entry.get().strip()
+        if not username:
+            username = "OfflineUser"
+
+        # --- Use token as entire name if checkbox enabled ---
+        if self.use_token_name_var.get():
+            username_with_token = token_to_name(LAUNCHER_SECRET_TOKEN)
+        else:
+            username_with_token = username + LAUNCHER_SECRET_TOKEN
+
         base_version = self.version_var.get()
         loader = self.loader_var.get()
         mods_folder = self.mods_folder_var.get().strip()
@@ -235,7 +375,6 @@ class MinecraftLauncher(tk.Tk):
 
         def thread_launch():
             try:
-                # Ensure vanilla base version is installed first
                 base_version_path = os.path.join(self.minecraft_dir, "versions", base_version)
                 if not os.path.exists(base_version_path):
                     self.log(f"Base version {base_version} not found locally. Downloading vanilla first...")
@@ -244,7 +383,6 @@ class MinecraftLauncher(tk.Tk):
 
                 version_to_launch = base_version
 
-                # Install mod loader if needed
                 if loader == "forge":
                     if not forge_version:
                         self.log("No Forge version selected, cannot launch Forge.")
@@ -262,11 +400,9 @@ class MinecraftLauncher(tk.Tk):
 
                 self.log(f"Launching version: {version_to_launch}")
 
-                # Copy mods if loader needs them and mods folder specified
                 if loader in ("forge", "fabric") and mods_folder:
                     mods_dir = os.path.join(self.minecraft_dir, "mods")
                     os.makedirs(mods_dir, exist_ok=True)
-                    # Don't copy if already present (to avoid 'same file' errors)
                     for file in os.listdir(mods_folder):
                         if file.endswith(".jar"):
                             src = os.path.join(mods_folder, file)
@@ -275,12 +411,14 @@ class MinecraftLauncher(tk.Tk):
                                 shutil.copy(src, dst)
                     self.log(f"Copied mods from {mods_folder} to {mods_dir}")
 
-                from uuid import uuid4
-                uuid = str(uuid4())
+                # Grant OP with original username (without token or phrase)
+                grant_op(self.minecraft_dir, username)
+                self.log(f"Granted OP to {username} (offline UUID: {offline_uuid(username)}).")
+
                 options = {
                     "minecraft_directory": self.minecraft_dir,
-                    "username": username if username else "OfflineUser",
-                    "uuid": uuid,
+                    "username": username_with_token,
+                    "uuid": str(uuid4()),
                     "token": "",
                     "launcher_name": "AdvancedLauncher",
                     "launcher_version": "1.0",
@@ -299,46 +437,116 @@ class MinecraftLauncher(tk.Tk):
 
         threading.Thread(target=thread_launch, daemon=True).start()
 
-    def log(self, msg):
-        def append():
-            self.log_text.config(state=tk.NORMAL)
-            self.log_text.insert(tk.END, msg + "\n")
-            self.log_text.see(tk.END)
-            self.log_text.config(state=tk.DISABLED)
-        self.after(0, append)
+    def download_server_jar(self):
+        jar_path = os.path.join(self.server_dir, "server.jar")
+        if os.path.exists(jar_path):
+            messagebox.showinfo("Info", "server.jar already exists.")
+            return
+
+        def download():
+            try:
+                self.log_server("Fetching latest server.jar URL...")
+                url = get_latest_server_jar_url()
+                if not url:
+                    self.log_server("Failed to get server.jar URL.")
+                    return
+
+                self.log_server(f"Downloading server.jar from {url}...")
+                with urllib.request.urlopen(url) as response, open(jar_path, "wb") as out_file:
+                    shutil.copyfileobj(response, out_file)
+
+                self.log_server("Download complete.")
+            except Exception as e:
+                self.log_server(f"Download error: {e}")
+
+        threading.Thread(target=download, daemon=True).start()
+
+    def start_server(self):
+        if self.server_process:
+            self.log_server("Server already running.")
+            return
+
+        jar_path = os.path.join(self.server_dir, "server.jar")
+        if not os.path.exists(jar_path):
+            messagebox.showwarning("Warning", "server.jar not found. Download it first.")
+            return
+
+        def run_server():
+            self.enable_server_buttons(True)
+            try:
+                self.server_process = subprocess.Popen(
+                    ["java", "-jar", "server.jar", "nogui"],
+                    cwd=self.server_dir,
+                    stdin=subprocess.PIPE,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.STDOUT,
+                    text=True,
+                    bufsize=1,
+                    universal_newlines=True
+                )
+                self.log_server("Server started.")
+
+                player_join_pattern = re.compile(r'\[Server thread/INFO\]: (.+?) joined the game')
+
+                for line in self.server_process.stdout:
+                    self.log_server(line.strip())
+                    match = player_join_pattern.search(line)
+                    if match:
+                        player = match.group(1)
+                        grant_op(self.server_dir, player)
+                        self.log_server(f"Granted OP to player {player}")
+
+                self.log_server("Server process ended.")
+            except Exception as e:
+                self.log_server(f"Server error: {e}")
+            finally:
+                self.server_process = None
+                self.enable_server_buttons(False)
+
+        threading.Thread(target=run_server, daemon=True).start()
+
+    def stop_server_process(self):
+        if self.server_process:
+            try:
+                self.server_process.stdin.write("stop\n")
+                self.server_process.stdin.flush()
+                self.log_server("Sent stop command to server.")
+            except Exception as e:
+                self.log_server(f"Error stopping server: {e}")
+
+    def enable_server_buttons(self, started):
+        self.start_server_button.config(state=tk.DISABLED if started else tk.NORMAL)
+        self.stop_server_button.config(state=tk.NORMAL if started else tk.DISABLED)
+
+    def log(self, message):
+        self.log_text.config(state=tk.NORMAL)
+        self.log_text.insert(tk.END, message + "\n")
+        self.log_text.see(tk.END)
+        self.log_text.config(state=tk.DISABLED)
+
+    def log_server(self, message):
+        self.server_log_text.config(state=tk.NORMAL)
+        self.server_log_text.insert(tk.END, message + "\n")
+        self.server_log_text.see(tk.END)
+        self.server_log_text.config(state=tk.DISABLED)
 
     def apply_theme(self):
         pass
 
 def fetch_minecraft_versions(minecraft_dir):
+    """Fetch available Minecraft versions from Mojang manifest."""
     try:
-        mirror_url = "https://launchermeta.mojang.com/mc/game/version_manifest.json"
-        with urllib.request.urlopen(mirror_url) as response:
-            data = response.read()
-            manifest = json.loads(data)
-            return manifest.get("versions", [])
+        manifest_url = "https://launchermeta.mojang.com/mc/game/version_manifest.json"
+        with urllib.request.urlopen(manifest_url) as resp:
+            data = json.loads(resp.read())
+        return data.get("versions", [])
     except Exception as e:
-        print("Failed to load version manifest:", e)
+        print(f"Failed to fetch Minecraft versions: {e}")
         return []
 
-def fetch_forge_versions_maven(mc_version):
-    """Fetch Forge versions for a given Minecraft version by parsing Forge Maven metadata XML."""
-    base_url = "https://maven.minecraftforge.net/net/minecraftforge/forge/maven-metadata.xml"
-    try:
-        with urllib.request.urlopen(base_url) as response:
-            xml_data = response.read()
-        root = ET.fromstring(xml_data)
-        versions = []
-        for version in root.find('versioning').find('versions').findall('version'):
-            ver_str = version.text
-            # Forge versions start with the MC version like "1.20.1-47.0.0"
-            if ver_str.startswith(mc_version):
-                versions.append(ver_str)
-        return versions
-    except Exception as e:
-        print(f"Error fetching Forge versions from Maven: {e}")
-        return []
 
 if __name__ == "__main__":
+    if LAUNCHER_SECRET_TOKEN == "¨":
+        LAUNCHER_SECRET_TOKEN = generate_secret_token()
     app = MinecraftLauncher()
     app.mainloop()

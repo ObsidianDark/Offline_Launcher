@@ -4,5 +4,6 @@
     "history": [],
     "dark_mode": false,
     "last_profile": "default",
-    "minecraft_dir": ""
+    "minecraft_dir": "",
+    "launcher_uuid": ""
 }
